@@ -7,7 +7,8 @@ export type PostProps = {
   title: string;
   content: string;
   found_item: string;
-  image: Blob;
+  image: string;
+  created_at: string;
 };
 
 interface postState {
@@ -17,11 +18,18 @@ interface postState {
   addPost: (post: PostProps) => void;
   updatePost: (updatedPost: PostProps) => void;
   removePost: (id: number) => void;
+  getProfilePosts: (user_id: number) => PostProps[];
+  getFeedPosts: (user_id: number) => PostProps[];
 }
 
-export const usePostStore = create<postState>((set) => ({
+export const usePostStore = create<postState>((set, get) => ({
   posts: [],
-  setPosts: (posts) => set({ posts: posts }),
+  setPosts: (posts) =>
+    set({
+      posts: [...posts].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ),
+    }),
   clearPosts: () => set({ posts: [] }),
   addPost: (post: PostProps) => set((state) => ({ posts: [...state.posts, post] })),
 
@@ -34,4 +42,6 @@ export const usePostStore = create<postState>((set) => ({
     set((state) => ({
       posts: state.posts.filter((p) => p.id !== id),
     })),
+  getProfilePosts: (user_id: number) => get().posts.filter((p) => p.author == user_id),
+  getFeedPosts: (user_id: number) => get().posts.filter((p) => p.author != user_id),
 }));

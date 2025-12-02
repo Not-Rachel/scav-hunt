@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link, useRouter } from 'expo-router';
 import { Button, View, Text } from 'react-native';
 import { useAuth } from '../AuthContext';
-import { FaCirclePlus } from 'react-icons/fa6';
+import { FontAwesome6 } from '@expo/vector-icons';
+
 export default function Nav() {
   const router = useRouter();
   const auth = useAuth();
@@ -15,7 +16,7 @@ export default function Nav() {
       <Link href={'/'}>HOME</Link>
       <Link href={'/(app)/map'}>MAP</Link>
       <Link href={'/(app)/createPost'} className="text-bold">
-        <FaCirclePlus />
+        <FontAwesome6 name="circle-plus" size={24} color="black" />
       </Link>
       <Link href={'/(app)/profile'} className="text-bold">
         Profile

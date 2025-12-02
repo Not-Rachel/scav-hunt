@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Scavpost, Profile
+from .models import Scavpost, Profile, DailyNaturalist
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,3 +30,10 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['user','image']
         extra_kwargs = {'user':{'read_only':True}}
+
+class DailyNaturalistSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model= DailyNaturalist
+        fields = ["date", "data", "user"]
+        extra_kwargs = {'date':{'read_only':True}}

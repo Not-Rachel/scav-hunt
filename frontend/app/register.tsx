@@ -1,6 +1,5 @@
 import { Text } from 'react-native';
 import Form from './components/Form';
-import { Link } from 'expo-router';
 export default function Register() {
   return (
     <>

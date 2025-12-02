@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("scavposts/", views.ScavpostListCreate.as_view(), name='scavpost-list'),
+    path("naturalist-daily/", views.DailyNaturalistView.as_view(), name='naturalist-daily-list'),
     path("scavpost/delete/<int:pk>/", views.ScavpostDelete.as_view(), name="delete-scavpost"),
     path("scavpost/update/<int:pk>/", views.ScavpostUpdate.as_view(), name="update-scavpost"),
 

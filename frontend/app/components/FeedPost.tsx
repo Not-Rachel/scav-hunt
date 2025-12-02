@@ -1,5 +1,6 @@
 import { View, Modal, Image, Text } from 'react-native';
-export default function FeedPost(post) {
+import { PostProps } from 'store/postStore';
+export default function FeedPost(post: PostProps) {
   return (
     <View>
       <Modal>

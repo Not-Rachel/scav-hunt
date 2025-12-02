@@ -3,14 +3,24 @@ import { View, Modal, Image, Text, Button, Pressable, TextInput, Platform } from
 import api from 'api';
 import * as ImagePicker from 'expo-image-picker';
 
-import { FaEllipsisVertical } from 'react-icons/fa6';
-export default function PostModal({ post, setPost, deletePost, editPost }) {
+import { FontAwesome6 } from '@expo/vector-icons';
+
+import { PostProps } from 'store/postStore';
+
+type PostModalProps = {
+  post: PostProps;
+  setPost: React.Dispatch<React.SetStateAction<PostProps[] | null>>;
+  deletePost: (id: number) => void;
+  editPost: (formdata: FormData, id: number) => void;
+};
+
+export default function PostModal({ post, setPost, deletePost, editPost }: PostModalProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [editing, setEditing] = useState(false);
 
   const [newTitle, setNewTitle] = useState<string>('');
   const [newContent, setNewContent] = useState<string>('');
-  const [newImage, setNewImage] = useState(null);
+  const [newImage, setNewImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -53,7 +63,7 @@ export default function PostModal({ post, setPost, deletePost, editPost }) {
       onRequestClose={() => {
         setPost(null);
       }}>
-      <View className="z-50 flex h-full w-[70lvw] items-center self-center bg-cyan-400">
+      <View className="z-50 flex h-full w-full items-center self-center bg-cyan-400">
         <Pressable onPress={() => setPost(null)} className="w-full bg-cyan-950">
           <Text className="p-2 text-center font-bold text-slate-50">CLOSE</Text>
         </Pressable>
@@ -61,36 +71,41 @@ export default function PostModal({ post, setPost, deletePost, editPost }) {
         {post != null && (
           <View className="flex h-full items-center py-8">
             {/* <Pressable onPress={() => {}}> */}
-            <View className="relative flex h-[70%]  w-[50lvw] flex-row">
+            <View className="relative flex h-[70%]  w-full flex-row">
               {editing ? (
                 <Pressable onPress={pickImageAsync} className="group relative">
                   <Image
                     source={{ uri: newImage ? newImage.uri : post.image }}
-                    className="h-full w-[50lvw] bg-cover"
+                    className="h-full w-64 bg-cover"
                   />
-                  <View className="pressed:bg-black/30 absolute inset-0 flex items-center justify-center hover:bg-black/50">
+                  <View className="absolute inset-0 flex items-center justify-center ">
                     <Text className="font-extrabold text-white">Press to change image</Text>
                   </View>
                 </Pressable>
               ) : (
-                <Image
-                  className="aspect-auto h-full w-[50lvw] bg-cover"
-                  source={{ uri: post.image }}
-                />
+                <Image className="h-full w-4/5 bg-cover" source={{ uri: post.image }} />
               )}
               <Pressable onPress={() => setShowMenu(!showMenu)}>
-                <FaEllipsisVertical />
+                <FontAwesome6 name="circle-plus" size={24} color="black" />
+
                 {showMenu && (
-                  <View className="absolute my-4 flex flex-col gap-4 rounded-lg bg-white p-4">
-                    <Button onPress={() => deletePost(post.id)} title="Delete"></Button>
-                    <Button
+                  <View className="absolute right-4 top-4 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-lg">
+                    <Pressable
+                      className="rounded bg-red-500 p-2"
+                      onPress={() => deletePost(post.id)}>
+                      <Text className="font-bold text-white">DELETE</Text>
+                    </Pressable>
+
+                    <Pressable
+                      className="rounded bg-blue-500 p-2"
                       onPress={() => {
                         setEditing(true);
                         setNewImage(null);
                         setNewTitle(post.title);
                         setNewContent(post.content);
-                      }}
-                      title="Edit"></Button>
+                      }}>
+                      <Text className="font-bold text-white">EDIT</Text>
+                    </Pressable>
                   </View>
                 )}
               </Pressable>

@@ -5,7 +5,7 @@ import Nav from './components/Nav';
 import { View } from 'react-native';
 const LayoutStack = () => {
   const { isAuthorized } = useAuth();
-  if (isAuthorized === null) {
+  if (isAuthorized === undefined) {
     return null; // or splash/loading screen
   }
 

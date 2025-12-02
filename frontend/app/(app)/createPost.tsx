@@ -1,34 +1,47 @@
 import { useEffect, useState } from 'react';
-import api from '../../api';
-import { Button, Text, TextInput, View, Image, Platform, Pressable } from 'react-native';
-import { content } from 'tailwind.config';
+import api, { apiFetch } from '../../api';
+import {
+  Button,
+  Text,
+  TextInput,
+  View,
+  Image,
+  Platform,
+  Pressable,
+  GestureResponderEvent,
+} from 'react-native';
+// import { content } from 'tailwind.config';
 import * as ImagePicker from 'expo-image-picker';
-import Icon from '../../assets/icon.png';
 import { router, useLocalSearchParams } from 'expo-router';
 import getItems from '../../naturalistApi';
 import Dropdown from 'react-native-input-select';
-import { useItemStore } from 'store/itemStore';
-import { usePostStore } from 'store/postStore';
+import { useItemStore } from '../../store/itemStore';
+import { usePostStore } from '../../store/postStore';
+import Icon from '../../assets/icon.png';
+import { ACCESS_TOKEN } from '../../constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export default function CreatePost() {
   const { items, setItems, clearItems } = useItemStore();
   const { addPost } = usePostStore();
 
   const [content, setContent] = useState<string>('');
   const [title, setTitle] = useState<string>('');
-  const [naturalistItem, setNaturalistItem] = useState<number | null>(null);
-  const [naturalistName, setNaturalistName] = useState(null);
-  const [naturalistId, setNaturalistId] = useState(null);
-  const [selectedImage, setSelectedImage] = useState<Object | undefined>(undefined);
+  const [naturalistItem, setNaturalistItem] = useState<number | undefined>(undefined);
+  const [naturalistName, setNaturalistName] = useState<string | null>(null);
+  const [naturalistId, setNaturalistId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const local = useLocalSearchParams();
   useEffect(() => {
     const init = async () => {
       if (local.taxon_name) {
-        setNaturalistName(local.taxon_name);
+        setNaturalistName(local.taxon_name[0]);
         console.log(local.taxon_name);
       }
       if (local.taxon_id) {
-        setNaturalistId(local.taxon_id);
+        setNaturalistId(local.taxon_id[0]);
         // const item = getItems(`taxon_id=${local.taxon_id}`).then((r) =>
         //   setNaturalistItem(r[0].taxon)
         // );
@@ -37,8 +50,11 @@ export default function CreatePost() {
     init();
   }, []);
 
-  const createPost = async (e: Event) => {
+  const createPost = async (e: GestureResponderEvent) => {
     e.preventDefault();
+
+    const token = await AsyncStorage.getItem(ACCESS_TOKEN);
+
     if (!selectedImage) {
       alert('You did not select any image.');
       return;
@@ -55,7 +71,9 @@ export default function CreatePost() {
 
     formData.append('title', title);
     formData.append('content', content);
-    formData.append('taxon_id', naturalistItem);
+    formData.append('taxon_id', naturalistItem.toString());
+    formData.append('latitude', '0.0');
+    formData.append('longitude', '0.0');
     const sendItem = items?.filter((item) => item.taxon.id == naturalistItem)[0];
     formData.append(
       'found_item',
@@ -63,7 +81,7 @@ export default function CreatePost() {
         ? sendItem.taxon.preferred_common_name.toUpperCase()
         : sendItem.taxon.name.toUpperCase()
     );
-    console.log(items?.filter((item) => item.taxon.id == naturalistItem));
+    // console.log(items?.filter((item) => item.taxon.id == naturalistItem));
     // formData.append('found_item', naturalistName);
 
     if (Platform.OS === 'web') {
@@ -72,30 +90,65 @@ export default function CreatePost() {
     } else {
       formData.append('image', {
         uri: selectedImage.uri,
-        type: selectedImage.mimeType || 'image/jpeg',
+        // type: selectedImage.mimeType || 'image/jpeg',
+        type: 'image/jpeg',
         name: selectedImage.fileName || 'upload.jpg',
       } as any);
     }
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
 
-    console.log('ID:', formData.get('taxon_id'));
+    try {
+      setIsLoading(true);
+      console.log('BaseURL:', api.defaults.baseURL);
 
-    api
-      .post('/api/scavposts/', formData)
-      .then((response) => {
-        console.log(response);
-        if (response.status !== 201) {
-          alert('Failed to create post');
-          return;
-        }
+      const response = await apiFetch('/api/scavposts/', {
+        method: 'POST',
+        body: formData,
+      });
 
-        setSelectedImage(undefined);
-        setNaturalistItem(null);
-        setTitle('');
-        setContent('');
+      console.log('API FETCH RESPONSE:', response);
+      addPost(response);
 
-        router.replace('/(app)/profile');
-      })
-      .catch((err) => console.error(err));
+      // if (Platform.OS === 'web') {
+      //   const response = await api.post('/api/scavposts/', formData);
+      //   if (response.status !== 201) {
+      //     alert('Failed to create post');
+      //     return;
+      //   }
+      //   addPost(response.data);
+      // } else {
+      //   const response = await fetch('http://10.0.2.2:8000/api/scavposts/', {
+      //     method: 'POST',
+      //     headers: {
+      //       Authorization: `Bearer ${token}`, // if you need auth
+      //     },
+      //     body: formData,
+      //   });
+      //   if (!response.ok) {
+      //     alert('Failed to create post');
+      //     return;
+      //   }
+
+      //   const data = await response.json();
+      //   console.log('Upload response:', data);
+      //   addPost(data);
+      // }
+      // const response = await api.post('/api/scavposts/', { test: 'test' });
+      // console.log(response);
+
+      setSelectedImage(null);
+      setNaturalistItem(undefined);
+      setTitle('');
+      setContent('');
+
+      router.replace('/(app)/profile');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const pickImageAsync = async () => {
@@ -116,7 +169,7 @@ export default function CreatePost() {
 
       <Pressable onPress={pickImageAsync}>
         <Image
-          source={{ uri: selectedImage ? selectedImage.uri : Icon.uri }}
+          source={selectedImage ? { uri: selectedImage.uri } : require('../../assets/icon.png')}
           className="h-48 w-48"></Image>
       </Pressable>
 
@@ -140,11 +193,15 @@ export default function CreatePost() {
           })) ?? []
         }
         selectedValue={naturalistItem}
-        onValueChange={(value) => setNaturalistItem(value)}
+        onValueChange={(value) => setNaturalistItem(value as number)}
         primaryColor={'green'}
       />
       {/* <Button title="Choose a photo" /> */}
-      <Button title="Post!" onPress={createPost}></Button>
+      <Button
+        title="Post!"
+        onPress={async (e: GestureResponderEvent) => {
+          if (!isLoading) createPost(e);
+        }}></Button>
     </View>
   );
 }

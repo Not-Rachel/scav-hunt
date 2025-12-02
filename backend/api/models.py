@@ -24,3 +24,16 @@ class Scavpost(models.Model):
 
     def __str__(self):
         return self.title
+    
+class DailyNaturalist(models.Model):
+    date = models.DateField()
+    # lat = models.FloatField(default=0.0)
+    # lng = models.FloatField(default=0.0)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="naturalist_items")
+    data = models.JSONField()
+
+    class Meta:
+        unique_together = ("date","user") 
+
+    def __str__(self):
+        return f"Naturalist item for {self.date}"

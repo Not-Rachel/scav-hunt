@@ -17,11 +17,11 @@ export default function Form({ route, method }: FormProps) {
   const [password, setPassword] = useState<string>('');
   const [confirmedPassword, setConfirmedPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { setIsAuthorized, setUser } = useAuth();
 
-  async function handleSubmit(event: Event): Promise<void> {
+  async function handleSubmit(): Promise<void> {
     console.log('Username, password', username, password, route, method);
     setLoading(true);
     // event.preventDefault();
@@ -41,7 +41,7 @@ export default function Form({ route, method }: FormProps) {
         router.replace('/(app)/profile');
       } else router.replace('/login');
     } catch (error) {
-      setError(error.message);
+      setError((error as Error).message);
       setConfirmedPassword('');
       setPassword('');
     } finally {
@@ -82,7 +82,7 @@ export default function Form({ route, method }: FormProps) {
         `}
         onPress={async (e) => {
           e.preventDefault();
-          await handleSubmit(e);
+          if (!loading) await handleSubmit();
           // router.replace('/');
         }}></Button>
     </View>

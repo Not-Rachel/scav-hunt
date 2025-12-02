@@ -1,4 +1,4 @@
-import api from 'api';
+import api, { apiFetch } from 'api';
 import FeedPost from 'app/components/FeedPost';
 import PostModal from 'app/components/PostModal';
 import { useEffect, useState } from 'react';
@@ -16,16 +16,15 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { usePostStore, PostProps } from 'store/postStore';
 import { AuthProvider, useAuth } from '../AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ACCESS_TOKEN } from '../../constants';
 
 export default function profile() {
-  // const [posts, setPosts] = useState([]);
   const [showPost, setShowPost] = useState<PostProps | null>(null);
 
-  const { posts, setPosts, clearPosts, addPost, updatePost, removePost } = usePostStore();
+  const { posts, setPosts, addPost, updatePost, removePost, getProfilePosts } = usePostStore();
   const auth = useAuth();
-  // const profilePosts =;
-  // const [profilePosts, setProfilePosts] = useState<PostProps[]>([]);
-  const profilePosts = posts.filter((item) => item.author == auth?.user);
+  const profilePosts = getProfilePosts(auth?.user);
 
   useEffect(() => {
     if (posts.length <= 0) {
@@ -57,22 +56,65 @@ export default function profile() {
         return;
       }
       setShowPost(null);
-      // getPost(); // TODO: make more efficient
       removePost(id);
     } catch (err) {
       console.error(err);
     }
   };
-  const editPost = async (formData, id: number) => {
+  // const editPost = async (formData: FormData, id: number) => {
+  //   try {
+  //     const response = await api.patch(`/api/scavpost/update/${id}/`, formData);
+  //     if (response.status != 200) {
+  //       alert('Failed to edit');
+  //       return;
+  //     }
+  //     const updatedPost = response.data;
+  //     setShowPost(updatedPost); //rerender
+  //     updatePost(updatedPost);
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  // };
+  const editPost = async (formData: FormData, id: number) => {
     try {
-      const response = await api.patch(`/api/scavpost/update/${id}/`, formData);
-      if (response.status != 200) {
-        alert('Failed to edit');
-        return;
-      }
-      setShowPost(showPost); //rerender
-      // getPost(); // TODO: make more efficient
-      updatePost(showPost);
+      // if (Platform.OS === 'web') {
+      //   // Axios works fine on web
+      //   const response = await api.patch(`/api/scavpost/update/${id}/`, formData);
+      //   if (response.status !== 200) {
+      //     alert('Failed to edit');
+      //     return;
+      //   }
+      //   const updatedPost = response.data;
+      //   setShowPost(updatedPost);
+      //   updatePost(updatedPost);
+      // } else {
+      //   // Use fetch on native
+      //   const token = await AsyncStorage.getItem(ACCESS_TOKEN);
+      //   const response = await fetch(`http://10.0.2.2:8000/api/scavpost/update/${id}/`, {
+      //     method: 'PATCH',
+      //     headers: {
+      //       Authorization: `Bearer ${token}`,
+      //     },
+      //     body: formData,
+      //   });
+
+      // if (!response.ok) {
+      //   alert('Failed to edit');
+      //   return;
+      // }
+      const response = await apiFetch(`/api/scavpost/update/${id}/`, {
+        method: 'PATCH',
+        body: formData,
+      });
+
+      console.log('API FETCH RESPONSE:', response);
+      addPost(response);
+
+      // const updatedPost = await response.json();
+      // setShowPost(updatedPost);
+      // updatePost(updatedPost);
+      setShowPost(response);
+      updatePost(response);
     } catch (err) {
       console.error(err);
     }
@@ -98,36 +140,37 @@ export default function profile() {
     ]);
   };
   return (
-    <ScrollView className="flex items-center">
-      <SafeAreaProvider>
-        <SafeAreaView>
-          <View className="my-8 py-4">
-            <Text>{}</Text>
-          </View>
-          <PostModal
-            post={showPost}
-            setPost={setShowPost}
-            deletePost={handleDelete}
-            editPost={editPost}></PostModal>
+    <ScrollView className="flex " contentContainerClassName="items-center">
+      {/* <SafeAreaProvider>
+        <SafeAreaView> */}
+      <View className="my-8 py-4">
+        <Text>Welcome to my profile{}</Text>
+      </View>
+      <PostModal
+        post={showPost}
+        setPost={setShowPost}
+        deletePost={handleDelete}
+        editPost={editPost}></PostModal>
 
-          <View className="grid grid-cols-3 gap-4 ">
-            {profilePosts.map((post) => {
-              return (
-                <View>
-                  <Pressable
-                    key={post.id}
-                    className="group relative"
-                    onPress={() => setShowPost(post)}>
-                    <Image className="h-64 w-64 object-contain  " source={{ uri: post.image }} />
-                    <View className="pressed:bg-black/30 absolute inset-0 hover:bg-slate-400/50"></View>
-                  </Pressable>
-                  <Text className="my-2 font-bold">{post.title}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </SafeAreaView>
-      </SafeAreaProvider>
+      <View className="grid grid-cols-3 gap-4 ">
+        {profilePosts.map((post) => {
+          return (
+            <View>
+              <Pressable
+                key={post.id}
+                onPress={() => {
+                  console.log('PRESSED');
+                  setShowPost(post);
+                }}>
+                <Image className="h-64 w-64 object-contain  " source={{ uri: post.image }} />
+              </Pressable>
+              <Text className="my-2 font-bold">{post.title}</Text>
+            </View>
+          );
+        })}
+      </View>
+      {/* </SafeAreaView>
+      </SafeAreaProvider> */}
     </ScrollView>
   );
 }

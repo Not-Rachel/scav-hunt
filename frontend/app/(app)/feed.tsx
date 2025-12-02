@@ -3,14 +3,14 @@ import { useAuth } from 'app/AuthContext';
 import SearchBar from 'app/components/SearchBar';
 import { useState, useEffect } from 'react';
 import { View, Text, Image, ScrollView } from 'react-native';
-import { PostProps, usePostStore } from 'store/postStore';
+import { usePostStore } from 'store/postStore';
 
 export default function Feed() {
-  const { posts, setPosts, clearPosts, addPost, updatePost, removePost } = usePostStore();
+  const { posts, setPosts, getFeedPosts } = usePostStore();
   const auth = useAuth();
   // const profilePosts =;
   //   const [feedPosts, setFeedPosts] = useState<PostProps[]>([]);
-  const feedPosts = posts.filter((item) => item.author != auth?.user);
+  const feedPosts = getFeedPosts(auth.user);
 
   useEffect(() => {
     if (posts.length <= 0) {
@@ -34,7 +34,7 @@ export default function Feed() {
       .catch((err) => console.error(err));
   };
   return (
-    <ScrollView className="flex w-2/3 items-center">
+    <ScrollView className="flex w-2/3 " contentContainerClassName="items-center">
       <View className="w-full">
         <View className="sticky">
           <SearchBar />
